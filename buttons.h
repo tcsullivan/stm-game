@@ -12,6 +12,15 @@
 #ifndef BUTTONS_H_
 #define BUTTONS_H_
 
+#define BUTTON_JOYUL (1 << 7)
+#define BUTTON_JOYUR (1 << 6)
+#define BUTTON_JOYDR (1 << 5)
+#define BUTTON_JOYDL (1 << 4)
+#define BUTTON_JOY   (1 << 3)
+#define BUTTON_1     (1 << 2)
+#define BUTTON_2     (1 << 1)
+#define BUTTON_3     (1 << 0)
+
 extern unsigned char button_state;
 
 void buttons_init();

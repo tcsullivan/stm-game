@@ -21,5 +21,8 @@ void dogs_init();
 void dogs_clear();
 void dogs_flush();
 
+void draw_pixel(int x, int y, bool state);
+void draw_bitmap(int x, int y, const unsigned char *buffer);
+
 #endif // DOGS_H_
 

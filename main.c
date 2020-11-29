@@ -28,12 +28,35 @@ THD_FUNCTION(Thread2, arg)
 
     dogs_init();
 
+    const unsigned char testbitmap[] = {
+        8, 8,
+        0b00111100,
+        0b01100110,
+        0b01000010,
+        0b01111110,
+        0b01100110,
+        0b01000010,
+        0b11000000,
+        0b11000000,
+    };
+
+
+    int x = 0, y = 0;
     while (1) {
         chThdSleepMilliseconds(100);
-        dogs_buffer[0] = button_state;
-        dogs_buffer[1] = button_state;
-        dogs_buffer[2] = button_state;
-        dogs_buffer[3] = button_state;
+
+        unsigned char b = button_state;
+        if ((b & (BUTTON_JOYUR | BUTTON_JOYUL)) == (BUTTON_JOYUR | BUTTON_JOYUL))
+            y--;
+        else if ((b & (BUTTON_JOYUR | BUTTON_JOYDR)) == (BUTTON_JOYUR | BUTTON_JOYDR))
+            x++;
+        else if ((b & (BUTTON_JOYDR | BUTTON_JOYDL)) == (BUTTON_JOYDR | BUTTON_JOYDL))
+            y++;
+        else if ((b & (BUTTON_JOYDL | BUTTON_JOYUL)) == (BUTTON_JOYDL | BUTTON_JOYUL))
+            x--;
+
+        dogs_clear();
+        draw_bitmap(x, y, testbitmap);
         dogs_flush();
     }
 }
@@ -62,6 +85,11 @@ int main(void)
        task but YOU MUST NEVER TRY TO SLEEP OR WAIT in this loop. Note that
        this tasks runs at the lowest priority level so any instruction added
        here will be executed after all other tasks have been started. */
+    while (1);
+}
+
+void HardFault_Handler()
+{
     while (1);
 }
 

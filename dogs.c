@@ -17,10 +17,16 @@
 #define SET_CMD  palClearPad(GPIOC, 15)
 #define CS_HIGH  palSetPad(GPIOA, 4)
 #define CS_LOW   palClearPad(GPIOA, 4)
-
 unsigned char dogs_buffer[DISP_WIDTH * DISP_HEIGHT / 8];
 
+static volatile bool dogs_spi_done = false;
+
 static void dogs_init_display();
+static void dogs_spi_callback(SPIDriver *spid)
+{
+    if (spiIsBufferComplete(spid))
+        dogs_spi_done = true;
+}
 
 void dogs_init()
 {
@@ -35,27 +41,32 @@ void dogs_init()
     palSetPad(GPIOC, 14);
     palClearPad(GPIOC, 15);
 
-    static const SPIConfig ls_spicfg = {
+    static const SPIConfig spicfg = {
         false,
-        NULL,
-        SPI_CR1_BR_2 | SPI_CR1_BR_1,
+        dogs_spi_callback,
+        0, // cr1
         0
     };
-    spiStart(&SPID1, &ls_spicfg);
+    spiStart(&SPID1, &spicfg);
 
     dogs_init_display();
     dogs_clear();
+    dogs_flush();
 }
 
 void dogs_write_data(unsigned char byte)
 {
     SET_DATA;
-    spiSend(&SPID1, 1, &byte);
+    dogs_spi_done = false;
+    spiStartSend(&SPID1, 1, &byte);
+    while (!dogs_spi_done);
 }
 void dogs_write_cmd(unsigned char byte)
 {
     SET_CMD;
-    spiSend(&SPID1, 1, &byte);
+    dogs_spi_done = false;
+    spiStartSend(&SPID1, 1, &byte);
+    while (!dogs_spi_done);
 }
 
 void dogs_set_column(unsigned int col)
@@ -144,10 +155,17 @@ void dogs_init_display()
 void dogs_clear()
 {
     unsigned char *ptr = dogs_buffer;
-    for (unsigned int i = 0; i < sizeof(dogs_buffer); i++) {
+    unsigned int count = sizeof(dogs_buffer);
+    for (; count > 8; count -= 8) {
+        *ptr++ = 0;
+        *ptr++ = 0;
+        *ptr++ = 0;
+        *ptr++ = 0;
+        *ptr++ = 0;
+        *ptr++ = 0;
+        *ptr++ = 0;
         *ptr++ = 0;
     }
-    dogs_flush();
 }
 
 void dogs_flush()
@@ -157,9 +175,40 @@ void dogs_flush()
     for (int page = 0; page < 8; page++) {
         dogs_set_page(page);
         dogs_set_column(30);
-        for (int i = 0; i < 102; i++)
-            dogs_write_data(*ptr++);
+
+        SET_DATA;
+        dogs_spi_done = false;
+        spiStartSend(&SPID1, 102, ptr);
+        ptr += 102;
+        while (!dogs_spi_done);
     }
     CS_HIGH;
+}
+
+void draw_pixel(int x, int y, bool state)
+{
+    if (state)
+        dogs_buffer[y / 8 * DISP_WIDTH + x] |= (1 << (y % 8));
+    else
+        dogs_buffer[y / 8 * DISP_WIDTH + x] &= ~(1 << (y % 8));
+}
+
+void draw_bitmap(int x, int y, const unsigned char *buffer)
+{
+    // Prepare source information
+    const unsigned char *src = buffer;
+    const int width = *src++;
+    const int height = *src++;
+    int sbit = 0;
+
+    for (int j = 0; j < height; j++) {
+        for (int i = 0; i < width; i++) {
+            draw_pixel(x + i, y + j, *src & (1 << sbit));
+            if (++sbit == 8) {
+                sbit = 0;
+                ++src;
+            }
+        }
+    }
 }
 

@@ -142,7 +142,7 @@
  * @brief   Enables the SERIAL subsystem.
  */
 #if !defined(HAL_USE_SERIAL) || defined(__DOXYGEN__)
-#define HAL_USE_SERIAL                      TRUE
+#define HAL_USE_SERIAL                      FALSE
 #endif
 
 /**
@@ -230,7 +230,7 @@
  * @note    Disabling this option saves both code and data space.
  */
 #if !defined(ADC_USE_WAIT) || defined(__DOXYGEN__)
-#define ADC_USE_WAIT                        TRUE
+#define ADC_USE_WAIT                        FALSE
 #endif
 
 /**
@@ -238,7 +238,7 @@
  * @note    Disabling this option saves both code and data space.
  */
 #if !defined(ADC_USE_MUTUAL_EXCLUSION) || defined(__DOXYGEN__)
-#define ADC_USE_MUTUAL_EXCLUSION            TRUE
+#define ADC_USE_MUTUAL_EXCLUSION            FALSE
 #endif
 
 /*===========================================================================*/
@@ -447,7 +447,7 @@
  * @note    Disabling this option saves both code and data space.
  */
 #if !defined(SPI_USE_WAIT) || defined(__DOXYGEN__)
-#define SPI_USE_WAIT                        TRUE
+#define SPI_USE_WAIT                        FALSE
 #endif
 
 /**
@@ -463,7 +463,7 @@
  * @note    Disabling this option saves both code and data space.
  */
 #if !defined(SPI_USE_MUTUAL_EXCLUSION) || defined(__DOXYGEN__)
-#define SPI_USE_MUTUAL_EXCLUSION            TRUE
+#define SPI_USE_MUTUAL_EXCLUSION            FALSE
 #endif
 
 /**

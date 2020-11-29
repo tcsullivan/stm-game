@@ -79,6 +79,7 @@ REGION_ALIAS("DATA_RAM_LMA", flash0);
 REGION_ALIAS("BSS_RAM", ram0);
 
 /* RAM region to be used for the default heap.*/
+/* tcsullivan: Set to ram1 so bss reports actual size used. */
 REGION_ALIAS("HEAP_RAM", ram1);
 
 /* Generic rules inclusion.*/
