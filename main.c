@@ -88,15 +88,15 @@ THD_FUNCTION(Thread2, arg)
         0b11000000,
     };
 
-    int t1x = DISP_WIDTH, t1o = 30;
+    int t1x = DISP_WIDTH / 2, t1o = 10;
+    int t2x = DISP_WIDTH, t2o = 50;
 
     int py = DISP_HEIGHT / 2 - 4;
     int vy = 0;
     int counter = 0;
     int mv = readVddmv();
     while (1) {
-        //systime_t old_time = chVTGetSystemTimeX();
-
+        // Player logic
         if (py > 0) {
             py += vy;
             if (vy > -4)
@@ -111,18 +111,19 @@ THD_FUNCTION(Thread2, arg)
                 py = 1;
         }
 
+        // Rendering
         dogs_clear();
 
-        draw_rect(t1x, 0, 4, t1o - 12);
-        draw_rect(t1x, t1o + 12, 4, DISP_HEIGHT - t1o + 12);
-
+        draw_rect(t1x, 0, 4, t1o - 10);
+        draw_rect(t1x, t1o + 10, 4, DISP_HEIGHT - t1o + 10);
+        draw_rect(t2x, 0, 4, t2o - 10);
+        draw_rect(t2x, t2o + 10, 4, DISP_HEIGHT - t2o + 10);
         draw_bitmap(4, py, testbitmap);
 
-        draw_number(0, 50, mv);
+        draw_number(0, 56, mv);
         dogs_flush();
 
-
-
+        // Game logic
         if (++counter == 50) {
             counter = 0;
             mv = !(PWR->CSR & PWR_CSR_PVDO) ? readVddmv() : 1;
@@ -130,8 +131,10 @@ THD_FUNCTION(Thread2, arg)
         t1x -= 2;
         if (t1x <= -5)
             t1x = DISP_WIDTH;
+        t2x -= 2;
+        if (t2x <= -5)
+            t2x = DISP_WIDTH;
 
-        //chThdSleepUntilS(chTimeAddX(old_time, TIME_MS2I(100) / 32));
         chThdSleepS(TIME_MS2I(100) / 64);
     }
 }

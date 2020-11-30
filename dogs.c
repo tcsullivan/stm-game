@@ -155,7 +155,7 @@ void dogs_init_display()
 void dogs_clear()
 {
     unsigned char *ptr = dogs_buffer;
-    unsigned int count = sizeof(dogs_buffer);
+    int count = sizeof(dogs_buffer);
     for (; count > 8; count -= 8) {
         *ptr++ = 0;
         *ptr++ = 0;
@@ -166,6 +166,8 @@ void dogs_clear()
         *ptr++ = 0;
         *ptr++ = 0;
     }
+    for (; count >= 0; count--)
+        *ptr++ = 0;
 }
 
 void dogs_flush()
