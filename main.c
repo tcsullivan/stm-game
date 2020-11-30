@@ -21,11 +21,13 @@
  *  - Can read buttons through PAL (through interrupts now)
  *  - Use ADC to read Vintref, print to screen in mV
  *  - Sleep mode via WFI, saves ~0.5mA (we're running around 1.1mA)
+ *  - Run at 512kHz, only use HSI for ADC: 360uA
  */
 
 static volatile bool adc_is_complete = false;
-static void adc_callback(ADCDriver *adcp)
+static void adc_callback(ADCDriver *adcd)
 {
+    (void)adcd;
     adc_is_complete = true;
 }
 
@@ -49,6 +51,9 @@ static int readVddmv()
 {
     adcsample_t reading = 0;
 
+    RCC->CR |= RCC_CR_HSION;
+    while (!(RCC->CR & RCC_CR_HSIRDY));
+
     adcStart(&ADCD1, &adccfg);
     adcSTM32EnableVREF(&ADCD1);
     adcStartConversion(&ADCD1, &adcgrpcfg, &reading, 1);
@@ -56,6 +61,8 @@ static int readVddmv()
     adcStopConversion(&ADCD1);
     adcSTM32DisableVREF(&ADCD1);
     adcStop(&ADCD1);
+
+    RCC->CR &= ~RCC_CR_HSION;
 
     return 3000 * /* CAL */ *((adcsample_t *)0x1FF80078) / reading;
 }
@@ -116,7 +123,8 @@ int main(void)
 {
     halInit();
     chSysInit();
-    RCC->CFGR |= RCC_CFGR_STOPWUCK;
+
+    RCC->CR &= ~RCC_CR_HSION;
 
     buttons_init();
 

@@ -47,13 +47,13 @@ void buttons_init()
     palEnablePadEvent(GPIOA, 7, PAL_EVENT_MODE_BOTH_EDGES);
     palEnablePadEvent(GPIOA, 9, PAL_EVENT_MODE_BOTH_EDGES);
     palEnablePadEvent(GPIOA, 10, PAL_EVENT_MODE_BOTH_EDGES);
-    palSetPadCallback(GPIOA, 0, buttonStateHandler, 0x0700);
-    palSetPadCallback(GPIOA, 1, buttonStateHandler, 0x0601);
-    palSetPadCallback(GPIOA, 2, buttonStateHandler, 0x0502);
-    palSetPadCallback(GPIOA, 3, buttonStateHandler, 0x0403);
-    palSetPadCallback(GPIOA, 6, buttonStateHandler, 0x0306);
-    palSetPadCallback(GPIOA, 7, buttonStateHandler, 0x0207);
-    palSetPadCallback(GPIOA, 9, buttonStateHandler, 0x0109);
-    palSetPadCallback(GPIOA, 10, buttonStateHandler, 0x000A);
+    palSetPadCallback(GPIOA, 0, buttonStateHandler, (void *)0x0700);
+    palSetPadCallback(GPIOA, 1, buttonStateHandler, (void *)0x0601);
+    palSetPadCallback(GPIOA, 2, buttonStateHandler, (void *)0x0502);
+    palSetPadCallback(GPIOA, 3, buttonStateHandler, (void *)0x0403);
+    palSetPadCallback(GPIOA, 6, buttonStateHandler, (void *)0x0306);
+    palSetPadCallback(GPIOA, 7, buttonStateHandler, (void *)0x0207);
+    palSetPadCallback(GPIOA, 9, buttonStateHandler, (void *)0x0109);
+    palSetPadCallback(GPIOA, 10, buttonStateHandler, (void *)0x000A);
 }
 
