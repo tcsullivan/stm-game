@@ -22,6 +22,7 @@ void dogs_clear();
 void dogs_flush();
 
 void draw_pixel(int x, int y, bool state);
+void draw_rect(int x, int y, int w, int h);
 void draw_bitmap(int x, int y, const unsigned char *buffer);
 void draw_number(int x, int y, int number);
 

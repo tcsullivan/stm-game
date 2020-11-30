@@ -21,7 +21,9 @@
  *  - Can read buttons through PAL (through interrupts now)
  *  - Use ADC to read Vintref, print to screen in mV
  *  - Sleep mode via WFI, saves ~0.5mA (we're running around 1.1mA)
- *  - Run at 512kHz, only use HSI for ADC: 360uA
+ *  - Run at 512kHz, only use HSI for ADC: 360uA (jumpy)
+ *  - Drop to 1.2V Vcore (range 3), enable low-V detector: 375uA (steady) (440uA at 1MHz)
+ *  - Run at 4MHz, drop to low-power run/sleep @ 64kHz for idle: 375uA (also lowered contrast)
  */
 
 static volatile bool adc_is_complete = false;
@@ -67,7 +69,7 @@ static int readVddmv()
     return 3000 * /* CAL */ *((adcsample_t *)0x1FF80078) / reading;
 }
 
-THD_WORKING_AREA(waThread2, 96);
+THD_WORKING_AREA(waThread2, 128);
 THD_FUNCTION(Thread2, arg)
 {
     (void)arg;
@@ -86,32 +88,51 @@ THD_FUNCTION(Thread2, arg)
         0b11000000,
     };
 
+    int t1x = DISP_WIDTH, t1o = 30;
 
-    int x = 0, y = 0;
+    int py = DISP_HEIGHT / 2 - 4;
+    int vy = 0;
     int counter = 0;
     int mv = readVddmv();
     while (1) {
-        chThdSleepMilliseconds(100);
+        //systime_t old_time = chVTGetSystemTimeX();
 
-        unsigned char b = button_state;
-        if ((b & (BUTTON_JOYUR | BUTTON_JOYUL)) == (BUTTON_JOYUR | BUTTON_JOYUL))
-            y--;
-        else if ((b & (BUTTON_JOYUR | BUTTON_JOYDR)) == (BUTTON_JOYUR | BUTTON_JOYDR))
-            x++;
-        else if ((b & (BUTTON_JOYDR | BUTTON_JOYDL)) == (BUTTON_JOYDR | BUTTON_JOYDL))
-            y++;
-        else if ((b & (BUTTON_JOYDL | BUTTON_JOYUL)) == (BUTTON_JOYDL | BUTTON_JOYUL))
-            x--;
+        if (py > 0) {
+            py += vy;
+            if (vy > -4)
+                vy--;
+        } else if (py < 0) {
+            py = 0;
+        }
 
-        if (++counter == 50) {
-            counter = 0;
-            mv = readVddmv();
+        if (button_state & BUTTON_2) {
+            vy = 5;
+            if (py <= 0)
+                py = 1;
         }
 
         dogs_clear();
-        draw_bitmap(x, y, testbitmap);
+
+        draw_rect(t1x, 0, 4, t1o - 12);
+        draw_rect(t1x, t1o + 12, 4, DISP_HEIGHT - t1o + 12);
+
+        draw_bitmap(4, py, testbitmap);
+
         draw_number(0, 50, mv);
         dogs_flush();
+
+
+
+        if (++counter == 50) {
+            counter = 0;
+            mv = !(PWR->CSR & PWR_CSR_PVDO) ? readVddmv() : 1;
+        }
+        t1x -= 2;
+        if (t1x <= -5)
+            t1x = DISP_WIDTH;
+
+        //chThdSleepUntilS(chTimeAddX(old_time, TIME_MS2I(100) / 32));
+        chThdSleepS(TIME_MS2I(100) / 64);
     }
 }
 
@@ -125,6 +146,7 @@ int main(void)
     chSysInit();
 
     RCC->CR &= ~RCC_CR_HSION;
+    PWR->CR |= PWR_CR_LPSDSR;
 
     buttons_init();
 

@@ -136,7 +136,7 @@ void dogs_init_display()
     CS_LOW;
     dogs_reset();
     CS_HIGH;
-    chThdSleepMilliseconds(100);
+    chThdSleepS(TIME_MS2I(100) / 64);
     CS_LOW;
     dogs_set_scroll_line(0);
     dogs_set_segdir(true);
@@ -146,7 +146,7 @@ void dogs_init_display()
     dogs_set_bias(true);
     dogs_set_power(0x07);
     dogs_set_vlcd_ratio(7);
-    dogs_set_contrast(0x10);
+    dogs_set_contrast(12);
     dogs_set_advanced(0x83);
     dogs_set_sleep(false);
     CS_HIGH;
@@ -187,10 +187,20 @@ void dogs_flush()
 
 void draw_pixel(int x, int y, bool state)
 {
+    if (x < 0 || y < 0 || x >= DISP_WIDTH || y >= DISP_HEIGHT)
+        return;
     if (state)
         dogs_buffer[y / 8 * DISP_WIDTH + x] |= (1 << (y % 8));
     else
         dogs_buffer[y / 8 * DISP_WIDTH + x] &= ~(1 << (y % 8));
+}
+
+void draw_rect(int x, int y, int w, int h)
+{
+    for (int i = 0; i < w; i++) {
+        for (int j = 0; j < h; j++)
+            draw_pixel(x + i, y + j, true);
+    }
 }
 
 void draw_bitmap(int x, int y, const unsigned char *buffer)
