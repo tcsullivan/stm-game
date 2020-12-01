@@ -20,6 +20,7 @@ extern unsigned char dogs_buffer[DISP_WIDTH * DISP_HEIGHT / 8];
 void dogs_init();
 void dogs_clear();
 void dogs_flush();
+void dogs_set_sleep(bool sleep);
 
 void draw_pixel(int x, int y, bool state);
 void draw_rect(int x, int y, int w, int h);

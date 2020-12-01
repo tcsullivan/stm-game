@@ -88,52 +88,72 @@ THD_FUNCTION(Thread2, arg)
         0b11000000,
     };
 
-    int t1x = DISP_WIDTH / 2, t1o = 10;
-    int t2x = DISP_WIDTH, t2o = 50;
+    bool sleep = false;
+    int score = 0;
+
+    int t1x = DISP_WIDTH / 2, t1o = 15;
+    int t2x = DISP_WIDTH, t2o = 49;
 
     int py = DISP_HEIGHT / 2 - 4;
     int vy = 0;
     int counter = 0;
     int mv = readVddmv();
     while (1) {
-        // Player logic
-        if (py > 0) {
-            py += vy;
-            if (vy > -4)
-                vy--;
-        } else if (py < 0) {
-            py = 0;
+        if (button_state & BUTTON_1) {
+            sleep ^= true;
+            dogs_set_sleep(sleep);
         }
 
-        if (button_state & BUTTON_2) {
-            vy = 5;
-            if (py <= 0)
-                py = 1;
+        if (!sleep) {
+            // Player logic
+            if (py > 0) {
+                py += vy;
+                if (vy > -3)
+                    vy--;
+            } else {
+                if (py < 0)
+                    py = 0;
+                if (score > 0)
+                    score = 0;
+            }
+    
+            if (button_state & BUTTON_2) {
+                vy = 5;
+                if (py <= 0)
+                    py = 1;
+            }
+    
+            // Rendering
+            dogs_clear();
+    
+            draw_rect(t1x, 0, 4, t1o - 10);
+            draw_rect(t1x, t1o + 10, 4, DISP_HEIGHT - t1o + 10);
+            draw_rect(t2x, 0, 4, t2o - 10);
+            draw_rect(t2x, t2o + 10, 4, DISP_HEIGHT - t2o + 10);
+            draw_bitmap(4, py, testbitmap);
+    
+            draw_number(DISP_WIDTH - 33, DISP_HEIGHT - 8, mv);
+            draw_number(DISP_WIDTH - 33, DISP_HEIGHT - 16, score);
+            dogs_flush();
+    
+            // Game logic
+            if (++counter == 50) {
+                counter = 0;
+                mv = !(PWR->CSR & PWR_CSR_PVDO) ? readVddmv() : 1;
+            }
+    
+            if (t1x == 4)
+                score = (py + 2 > t1o - 10 && py + 6 < t1o + 10) ? score + 1 : 0;
+            if (t2x == 4)
+                score = (py + 2 > t2o - 10 && py + 6 < t2o + 10) ? score + 1 : 0;
+    
+            t1x -= 2;
+            if (t1x <= -5)
+                t1x = DISP_WIDTH;
+            t2x -= 2;
+            if (t2x <= -5)
+                t2x = DISP_WIDTH;
         }
-
-        // Rendering
-        dogs_clear();
-
-        draw_rect(t1x, 0, 4, t1o - 10);
-        draw_rect(t1x, t1o + 10, 4, DISP_HEIGHT - t1o + 10);
-        draw_rect(t2x, 0, 4, t2o - 10);
-        draw_rect(t2x, t2o + 10, 4, DISP_HEIGHT - t2o + 10);
-        draw_bitmap(4, py, testbitmap);
-
-        draw_number(0, 56, mv);
-        dogs_flush();
-
-        // Game logic
-        if (++counter == 50) {
-            counter = 0;
-            mv = !(PWR->CSR & PWR_CSR_PVDO) ? readVddmv() : 1;
-        }
-        t1x -= 2;
-        if (t1x <= -5)
-            t1x = DISP_WIDTH;
-        t2x -= 2;
-        if (t2x <= -5)
-            t2x = DISP_WIDTH;
 
         chThdSleepS(TIME_MS2I(100) / 64);
     }
