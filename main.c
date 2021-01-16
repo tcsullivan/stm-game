@@ -14,6 +14,9 @@
 #include "dogs.h"
 #include "hal.h"
 
+#include "2048.h"
+#include "flapbird.h"
+
 /*
  * Progress:
  *  - Serial through LPUART1 works (38400 baud, takes over swdio pins)
@@ -24,6 +27,9 @@
  *  - Run at 512kHz, only use HSI for ADC: 360uA (jumpy)
  *  - Drop to 1.2V Vcore (range 3), enable low-V detector: 375uA (steady) (440uA at 1MHz)
  *  - Run at 4MHz, drop to low-power run/sleep @ 64kHz for idle: 375uA (also lowered contrast)
+ *  - Sleep display for 'pause': ~240uA
+ *
+ *  - Flappy bird is going, 2048 next
  */
 
 static volatile bool adc_is_complete = false;
@@ -76,86 +82,26 @@ THD_FUNCTION(Thread2, arg)
 
     dogs_init();
 
-    const unsigned char testbitmap[] = {
-        8, 8,
-        0b00111100,
-        0b01100110,
-        0b01000010,
-        0b01111110,
-        0b01100110,
-        0b01000010,
-        0b11000000,
-        0b11000000,
-    };
+    flapbird_init();
 
     bool sleep = false;
-    int score = 0;
-
-    int t1x = DISP_WIDTH / 2, t1o = 15;
-    int t2x = DISP_WIDTH, t2o = 49;
-
-    int py = DISP_HEIGHT / 2 - 4;
-    int vy = 0;
-    int counter = 0;
-    int mv = readVddmv();
     while (1) {
         if (button_state & BUTTON_1) {
             sleep ^= true;
+            if (sleep) {
+                draw_number(DISP_WIDTH - 33, 0,
+                            !(PWR->CSR & PWR_CSR_PVDO) ? readVddmv() : 1);
+                dogs_flush();
+            }
             dogs_set_sleep(sleep);
         }
 
+        int dtime = 100;
         if (!sleep) {
-            // Player logic
-            if (py > 0) {
-                py += vy;
-                if (vy > -3)
-                    vy--;
-            } else {
-                if (py < 0)
-                    py = 0;
-                if (score > 0)
-                    score = 0;
-            }
-    
-            if (button_state & BUTTON_2) {
-                vy = 5;
-                if (py <= 0)
-                    py = 1;
-            }
-    
-            // Rendering
-            dogs_clear();
-    
-            draw_rect(t1x, 0, 4, t1o - 10);
-            draw_rect(t1x, t1o + 10, 4, DISP_HEIGHT - t1o + 10);
-            draw_rect(t2x, 0, 4, t2o - 10);
-            draw_rect(t2x, t2o + 10, 4, DISP_HEIGHT - t2o + 10);
-            draw_bitmap(4, py, testbitmap);
-    
-            draw_number(DISP_WIDTH - 33, DISP_HEIGHT - 8, mv);
-            draw_number(DISP_WIDTH - 33, DISP_HEIGHT - 16, score);
-            dogs_flush();
-    
-            // Game logic
-            if (++counter == 50) {
-                counter = 0;
-                mv = !(PWR->CSR & PWR_CSR_PVDO) ? readVddmv() : 1;
-            }
-    
-            if (t1x == 4)
-                score = (py + 2 > t1o - 10 && py + 6 < t1o + 10) ? score + 1 : 0;
-            if (t2x == 4)
-                score = (py + 2 > t2o - 10 && py + 6 < t2o + 10) ? score + 1 : 0;
-    
-            t1x -= 2;
-            if (t1x <= -5)
-                t1x = DISP_WIDTH;
-            t2x -= 2;
-            if (t2x <= -5)
-                t2x = DISP_WIDTH;
+            dtime = flapbird_loop();
         }
 
-        chThdSleepS(TIME_MS2I(100) / 64);
+        chThdSleepS(TIME_MS2I(dtime) / 64);
     }
 }
 

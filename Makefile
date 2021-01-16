@@ -123,6 +123,8 @@ CSRC = $(ALLCSRC) \
        $(TESTSRC) \
 	   dogs.c \
 	   buttons.c \
+	   flapbird.c \
+	   2048.c \
        main.c
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global

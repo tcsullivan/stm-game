@@ -21,6 +21,11 @@
 #define BUTTON_2     (1 << 1)
 #define BUTTON_3     (1 << 0)
 
+#define BUTTON_JOYUP    (BUTTON_JOYUL | BUTTON_JOYUR)
+#define BUTTON_JOYDOWN  (BUTTON_JOYDL | BUTTON_JOYDR)
+#define BUTTON_JOYLEFT  (BUTTON_JOYUL | BUTTON_JOYDL)
+#define BUTTON_JOYRIGHT (BUTTON_JOYUR | BUTTON_JOYDR)
+
 extern unsigned char button_state;
 
 void buttons_init();

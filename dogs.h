@@ -12,6 +12,8 @@
 #ifndef DOGS_H_
 #define DOGS_H_
 
+#include <stdbool.h>
+
 #define DISP_WIDTH  102
 #define DISP_HEIGHT 64
 

@@ -166,7 +166,7 @@ void dogs_clear()
         *ptr++ = 0;
         *ptr++ = 0;
     }
-    for (; count >= 0; count--)
+    for (; --count >= 0;)
         *ptr++ = 0;
 }
 
