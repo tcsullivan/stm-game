@@ -21,6 +21,17 @@ unsigned char dogs_buffer[DISP_WIDTH * DISP_HEIGHT / 8];
 
 static volatile bool dogs_spi_done = false;
 
+static void spi_send(unsigned char *data, unsigned int len)
+{
+    dogs_spi_done = false;
+    spiStartSend(&SPID1, len, data);
+    while (!dogs_spi_done)
+        asm("wfi");
+
+    //for (; len > 0; --len)
+    //    spiPolledExchange(&SPID1, *data++);
+}
+
 static void dogs_init_display();
 static void dogs_spi_callback(SPIDriver *spid)
 {
@@ -54,27 +65,15 @@ void dogs_init()
     dogs_flush();
 }
 
-void dogs_write_data(unsigned char byte)
-{
-    SET_DATA;
-    dogs_spi_done = false;
-    spiStartSend(&SPID1, 1, &byte);
-    while (!dogs_spi_done);
-}
 void dogs_write_cmd(unsigned char byte)
 {
-    SET_CMD;
-    dogs_spi_done = false;
-    spiStartSend(&SPID1, 1, &byte);
-    while (!dogs_spi_done);
+    spi_send(&byte, 1);
 }
 
 void dogs_set_column(unsigned int col)
 {
-    //if (col < DISP_WIDTH) {
-        dogs_write_cmd(0x10 | ((col >> 4) & 0xF));
-        dogs_write_cmd(0x00 | (col & 0xF));
-    //}
+    dogs_write_cmd(0x10 | ((col >> 4) & 0xF));
+    dogs_write_cmd(0x00 | (col & 0xF));
 }
 void dogs_set_power(unsigned int bits)
 {
@@ -133,6 +132,7 @@ void dogs_set_advanced(unsigned int bits)
 
 void dogs_init_display()
 {
+    SET_CMD;
     CS_LOW;
     dogs_reset();
     CS_HIGH;
@@ -154,9 +154,14 @@ void dogs_init_display()
 
 void dogs_clear()
 {
-    unsigned char *ptr = dogs_buffer;
-    int count = sizeof(dogs_buffer);
-    for (; count > 8; count -= 8) {
+    uint32_t *ptr = (uint32_t *)dogs_buffer;
+    unsigned int count = sizeof(dogs_buffer) / sizeof(uint32_t) / 12;
+
+    for (; count; --count) {
+        *ptr++ = 0;
+        *ptr++ = 0;
+        *ptr++ = 0;
+        *ptr++ = 0;
         *ptr++ = 0;
         *ptr++ = 0;
         *ptr++ = 0;
@@ -166,23 +171,20 @@ void dogs_clear()
         *ptr++ = 0;
         *ptr++ = 0;
     }
-    for (; --count >= 0;)
-        *ptr++ = 0;
 }
 
 void dogs_flush()
 {
     unsigned char *ptr = dogs_buffer;
     CS_LOW;
-    for (int page = 0; page < 8; page++) {
+    for (int page = 0; page < 8; ++page) {
+        SET_CMD;
         dogs_set_page(page);
         dogs_set_column(30);
 
         SET_DATA;
-        dogs_spi_done = false;
-        spiStartSend(&SPID1, 102, ptr);
+        spi_send(ptr, 102);
         ptr += 102;
-        while (!dogs_spi_done);
     }
     CS_HIGH;
 }

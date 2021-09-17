@@ -451,11 +451,11 @@
  * @note    This macro can be used to activate a power saving mode.
  */
 #define CH_CFG_IDLE_ENTER_HOOK() {                                          \
-    RCC->ICSCR = (RCC->ICSCR & ~RCC_ICSCR_MSIRANGE_Msk); \
-    while (!(RCC->CR & RCC_CR_MSIRDY)); \
-    PWR->CR &= ~PWR_CR_LPRUN; \
-    PWR->CR |= PWR_CR_LPRUN; \
 }
+//    RCC->ICSCR = (RCC->ICSCR & ~RCC_ICSCR_MSIRANGE_Msk);
+//    while (!(RCC->CR & RCC_CR_MSIRDY));
+//    PWR->CR &= ~PWR_CR_LPRUN;
+//    PWR->CR |= PWR_CR_LPRUN;
 
 /**
  * @brief   Idle thread leave hook.
@@ -464,10 +464,10 @@
  * @note    This macro can be used to deactivate a power saving mode.
  */
 #define CH_CFG_IDLE_LEAVE_HOOK() {                                          \
-    RCC->ICSCR |= 6 << RCC_ICSCR_MSIRANGE_Pos; \
-    while (!(RCC->CR & RCC_CR_MSIRDY)); \
-    PWR->CR &= ~PWR_CR_LPRUN; \
 }
+//    RCC->ICSCR |= 6 << RCC_ICSCR_MSIRANGE_Pos;
+//    while (!(RCC->CR & RCC_CR_MSIRDY));
+//    PWR->CR &= ~PWR_CR_LPRUN;
 
 /**
  * @brief   System halt hook.

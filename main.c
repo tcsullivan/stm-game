@@ -29,8 +29,92 @@
  *  - Run at 4MHz, drop to low-power run/sleep @ 64kHz for idle: 375uA (also lowered contrast)
  *  - Sleep display for 'pause': ~240uA
  *
+ *  - Use RTC for delay, Stop mode when idle: 348uA
+ *
  *  - Flappy bird is going, 2048 next
  */
+
+static int readVddmv();
+
+THD_WORKING_AREA(waThread2, 128);
+THD_FUNCTION(Thread2, arg)
+{
+    (void)arg;
+
+    dogs_init();
+    flapbird_init();
+}
+THD_TABLE_BEGIN
+    THD_TABLE_THREAD(0, "game", waThread2, Thread2, NULL)
+THD_TABLE_END
+
+static void alarm_callback(RTCDriver *rtcp, rtcevent_t event)
+{
+    (void)rtcp;
+    (void)event;
+
+    static bool sleep = false;
+
+	bool sleep_button = (button_state & BUTTON_1) != 0;
+    if (sleep && !sleep_button)
+		return;
+
+    RCC->ICSCR |= 6 << RCC_ICSCR_MSIRANGE_Pos;
+    dogs_set_sleep(false);
+
+    if (sleep_button) {
+        sleep ^= true;
+        if (sleep) {
+            draw_number(DISP_WIDTH - 33, 0,
+                        !(PWR->CSR & PWR_CSR_PVDO) ? readVddmv() : 1);
+            dogs_flush();
+        }
+    }
+
+    if (!sleep)
+        flapbird_loop();
+
+    dogs_set_sleep(true);
+}
+
+int main(void)
+{
+    halInit();
+    chSysInit();
+    buttons_init();
+
+    static const RTCWakeup wakeupcfg = {
+        (0 << 16) | // wucksel (37k /16 = ~2k)
+        240         // wut (hope for 10Hz)
+    };
+    rtcSTM32SetPeriodicWakeup(&RTCD1, &wakeupcfg);
+    rtcSetCallback(&RTCD1, alarm_callback);
+
+    RCC->CR &= ~RCC_CR_HSION;
+    PWR->CR |= PWR_CR_LPSDSR | PWR_CR_ULP;
+    PWR->CR |= PWR_CR_LPRUN;
+    SCB->SCR = 6;
+    FLASH->ACR |= FLASH_ACR_SLEEP_PD;
+
+    // Below code for serial -- note that it cuts off debugging, and MUST be used in a thread
+    //chThdSleepMilliseconds(2000);
+    //palSetPadMode(GPIOA, 13, PAL_MODE_ALTERNATE(6));
+    //palSetPadMode(GPIOA, 14, PAL_MODE_ALTERNATE(6));
+    //sdStart(&LPSD1, NULL);
+    //chnWrite(&LPSD1, (const uint8_t *)"Hello World!\r\n", 14);
+
+    /* This is now the idle thread loop, you may perform here a low priority
+       task but YOU MUST NEVER TRY TO SLEEP OR WAIT in this loop. Note that
+       this tasks runs at the lowest priority level so any instruction added
+       here will be executed after all other tasks have been started. */
+    while (1)
+        asm("wfe");
+}
+
+void HardFault_Handler()
+{
+    while (1);
+}
 
 static volatile bool adc_is_complete = false;
 static void adc_callback(ADCDriver *adcd)
@@ -55,7 +139,7 @@ static const ADCConversionGroup adcgrpcfg = {
   .chselr       = ADC_CHSELR_CHSEL17       /* CHSELR */
 };
 
-static int readVddmv()
+int readVddmv()
 {
     adcsample_t reading = 0;
 
@@ -74,70 +158,3 @@ static int readVddmv()
 
     return 3000 * /* CAL */ *((adcsample_t *)0x1FF80078) / reading;
 }
-
-THD_WORKING_AREA(waThread2, 128);
-THD_FUNCTION(Thread2, arg)
-{
-    (void)arg;
-
-    dogs_init();
-
-    flapbird_init();
-
-    bool sleep = false;
-    while (1) {
-        if (button_state & BUTTON_1) {
-            sleep ^= true;
-            if (sleep) {
-                draw_number(DISP_WIDTH - 33, 0,
-                            !(PWR->CSR & PWR_CSR_PVDO) ? readVddmv() : 1);
-                dogs_flush();
-            }
-            dogs_set_sleep(sleep);
-        }
-
-        int dtime = 100;
-        if (!sleep) {
-            dtime = flapbird_loop();
-        }
-
-        chThdSleepS(TIME_MS2I(dtime) / 64);
-    }
-}
-
-THD_TABLE_BEGIN
-    THD_TABLE_THREAD(0, "game", waThread2, Thread2, NULL)
-THD_TABLE_END
-
-int main(void)
-{
-    halInit();
-    chSysInit();
-
-    RCC->CR &= ~RCC_CR_HSION;
-    PWR->CR |= PWR_CR_LPSDSR;
-
-    buttons_init();
-
-    // Below code for serial -- note that it cuts off debugging, and MUST be used in a thread
-    //chThdSleepMilliseconds(2000);
-    //palSetPadMode(GPIOA, 13, PAL_MODE_ALTERNATE(6));
-    //palSetPadMode(GPIOA, 14, PAL_MODE_ALTERNATE(6));
-    //sdStart(&LPSD1, NULL);
-    //chnWrite(&LPSD1, (const uint8_t *)"Hello World!\r\n", 14);
-
-
-
-    /* This is now the idle thread loop, you may perform here a low priority
-       task but YOU MUST NEVER TRY TO SLEEP OR WAIT in this loop. Note that
-       this tasks runs at the lowest priority level so any instruction added
-       here will be executed after all other tasks have been started. */
-    while (1)
-        asm("wfi");
-}
-
-void HardFault_Handler()
-{
-    while (1);
-}
-
