@@ -9,7 +9,7 @@
  * See the GNU General Public License for more details.
  */
 
-#include "ch.h"
+//#include "ch.h"
 #include "dogs.h"
 #include "hal.h"
 
@@ -19,25 +19,26 @@
 #define CS_LOW   palClearPad(GPIOA, 4)
 unsigned char dogs_buffer[DISP_WIDTH * DISP_HEIGHT / 8];
 
-static volatile bool dogs_spi_done = false;
+//static volatile bool dogs_spi_done = false;
 
-static void spi_send(unsigned char *data, unsigned int len)
-{
-    dogs_spi_done = false;
-    spiStartSend(&SPID1, len, data);
-    while (!dogs_spi_done)
-        asm("wfi");
+#define spi_send(data, len) spiSend(&SPID1, len, data)
+//static void spi_send(unsigned char *data, unsigned int len)
+//{
+    //dogs_spi_done = false;
+    //spiStartSend(&SPID1, len, data);
+    //while (!dogs_spi_done)
+    //    asm("wfi");
 
     //for (; len > 0; --len)
     //    spiPolledExchange(&SPID1, *data++);
-}
+//}
 
 static void dogs_init_display();
-static void dogs_spi_callback(SPIDriver *spid)
-{
-    if (spiIsBufferComplete(spid))
-        dogs_spi_done = true;
-}
+//static void dogs_spi_callback(SPIDriver *spid)
+//{
+//    if (spiIsBufferComplete(spid))
+//        dogs_spi_done = true;
+//}
 
 void dogs_init()
 {
@@ -54,7 +55,7 @@ void dogs_init()
 
     static const SPIConfig spicfg = {
         false,
-        dogs_spi_callback,
+        NULL /*dogs_spi_callback*/,
         0, // cr1
         0
     };
@@ -136,7 +137,13 @@ void dogs_init_display()
     CS_LOW;
     dogs_reset();
     CS_HIGH;
-    chThdSleepS(TIME_MS2I(100) / 64);
+
+	unsigned long int reset_sleep = (STM32_SYSCLK / 1000) * 100;
+	while (reset_sleep != 0) {
+		asm("nop; nop; nop; nop; nop");
+		reset_sleep -= 8;
+	}
+
     CS_LOW;
     dogs_set_scroll_line(0);
     dogs_set_segdir(true);

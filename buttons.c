@@ -10,7 +10,6 @@
  */
 
 #include "buttons.h"
-#include "ch.h"
 #include "hal.h"
 
 unsigned char button_state = 0;

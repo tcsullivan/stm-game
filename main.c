@@ -10,11 +10,10 @@
  */
 
 #include "buttons.h"
-#include "ch.h"
 #include "dogs.h"
 #include "hal.h"
 
-#include "2048.h"
+//#include "2048.h"
 #include "flapbird.h"
 
 /*
@@ -35,18 +34,6 @@
  */
 
 static int readVddmv();
-
-THD_WORKING_AREA(waThread2, 128);
-THD_FUNCTION(Thread2, arg)
-{
-    (void)arg;
-
-    dogs_init();
-    flapbird_init();
-}
-THD_TABLE_BEGIN
-    THD_TABLE_THREAD(0, "game", waThread2, Thread2, NULL)
-THD_TABLE_END
 
 static void alarm_callback(RTCDriver *rtcp, rtcevent_t event)
 {
@@ -80,12 +67,15 @@ static void alarm_callback(RTCDriver *rtcp, rtcevent_t event)
 int main(void)
 {
     halInit();
-    chSysInit();
+    //chSysInit();
     buttons_init();
+
+    dogs_init();
+    flapbird_init();
 
     static const RTCWakeup wakeupcfg = {
         (0 << 16) | // wucksel (37k /16 = ~2k)
-        240         // wut (hope for 10Hz)
+        200         // wut (hope for 10Hz)
     };
     rtcSTM32SetPeriodicWakeup(&RTCD1, &wakeupcfg);
     rtcSetCallback(&RTCD1, alarm_callback);
@@ -94,7 +84,7 @@ int main(void)
     PWR->CR |= PWR_CR_LPSDSR | PWR_CR_ULP;
     PWR->CR |= PWR_CR_LPRUN;
     SCB->SCR = 6;
-    FLASH->ACR |= FLASH_ACR_SLEEP_PD;
+    //FLASH->ACR |= FLASH_ACR_SLEEP_PD;
 
     // Below code for serial -- note that it cuts off debugging, and MUST be used in a thread
     //chThdSleepMilliseconds(2000);

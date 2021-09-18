@@ -55,13 +55,13 @@ endif
 # Stack size to be allocated to the Cortex-M process stack. This stack is
 # the stack used by the main() thread.
 ifeq ($(USE_PROCESS_STACKSIZE),)
-  USE_PROCESS_STACKSIZE = 0x80
+  USE_PROCESS_STACKSIZE = 0
 endif
 
 # Stack size to the allocated to the Cortex-M main/exceptions stack. This
 # stack is used for processing interrupts and exceptions.
 ifeq ($(USE_EXCEPTIONS_STACKSIZE),)
-  USE_EXCEPTIONS_STACKSIZE = 0x100
+  USE_EXCEPTIONS_STACKSIZE = 0x180
 endif
 
 # Enables the use of FPU (no, softfp, hard).
@@ -102,12 +102,13 @@ include $(CHIBIOS)/os/common/startup/ARMCMx/compilers/GCC/mk/startup_stm32l0xx.m
 include $(CHIBIOS)/os/hal/hal.mk
 include $(CHIBIOS)/os/hal/ports/STM32/STM32L0xx/platform.mk
 include $(CHIBIOS)/os/hal/boards/ST_NUCLEO32_L011K4/board.mk
-include $(CHIBIOS)/os/hal/osal/rt-nil/osal.mk
+#include $(CHIBIOS)/os/hal/osal/os-less/ARMCMx/osal.mk
+#include $(CHIBIOS)/os/hal/osal/rt-nil/osal.mk
 # RTOS files (optional).
-include $(CHIBIOS)/os/nil/nil.mk
-include $(CHIBIOS)/os/common/ports/ARMCMx/compilers/GCC/mk/port_v6m.mk
+#include $(CHIBIOS)/os/nil/nil.mk
+#include $(CHIBIOS)/os/common/ports/ARMCMx/compilers/GCC/mk/port_v6m.mk
 # Auto-build files in ./source recursively.
-include $(CHIBIOS)/tools/mk/autobuild.mk
+#include $(CHIBIOS)/tools/mk/autobuild.mk
 # Other files (optional).
 #include $(CHIBIOS)/test/lib/test.mk
 #include $(CHIBIOS)/test/nil/nil_test.mk
@@ -121,11 +122,13 @@ LDSCRIPT= ./STM32L011x4.ld
 # setting.
 CSRC = $(ALLCSRC) \
        $(TESTSRC) \
-	   dogs.c \
-	   buttons.c \
-	   flapbird.c \
+	   $(CHIBIOS)/os/hal/osal/lib/osal_vt.c \
 	   2048.c \
-       main.c
+	   buttons.c \
+	   dogs.c \
+	   flapbird.c \
+       main.c \
+	   osal.c
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.
@@ -155,13 +158,13 @@ CPPWARN = -Wall -Wextra -Wundef
 #
 
 # List all user C define here, like -D_DEBUG=1
-UDEFS =
+UDEFS = -DNOINLINE="" -DchDbgCheck=osalDbgCheck
 
 # Define ASM defines here
-UADEFS =
+UADEFS = -DCRT0_CONTROL_INIT=0
 
 # List all user directories here
-UINCDIR =
+UINCDIR = $(CHIBIOS)/os/hal/osal/lib
 
 # List the user directory to look for the libraries here
 ULIBDIR =
