@@ -138,11 +138,11 @@ void dogs_init_display()
     dogs_reset();
     CS_HIGH;
 
-	unsigned long int reset_sleep = (STM32_SYSCLK / 1000) * 100;
-	while (reset_sleep != 0) {
-		asm("nop; nop; nop; nop; nop");
-		reset_sleep -= 8;
-	}
+    unsigned long int reset_sleep = (STM32_SYSCLK / 1000) * 100;
+    while (reset_sleep != 0) {
+        asm("nop; nop; nop; nop; nop");
+        reset_sleep -= 8;
+    }
 
     CS_LOW;
     dogs_set_scroll_line(0);

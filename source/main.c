@@ -42,9 +42,9 @@ static void alarm_callback(RTCDriver *rtcp, rtcevent_t event)
 
     static bool sleep = false;
 
-	bool sleep_button = (button_state & BUTTON_1) != 0;
+    bool sleep_button = (button_state & BUTTON_1) != 0;
     if (sleep && !sleep_button)
-		return;
+        return;
 
     RCC->ICSCR |= 6 << RCC_ICSCR_MSIRANGE_Pos;
     dogs_set_sleep(false);

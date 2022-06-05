@@ -102,33 +102,17 @@ include $(CHIBIOS)/os/common/startup/ARMCMx/compilers/GCC/mk/startup_stm32l0xx.m
 include $(CHIBIOS)/os/hal/hal.mk
 include $(CHIBIOS)/os/hal/ports/STM32/STM32L0xx/platform.mk
 include $(CHIBIOS)/os/hal/boards/ST_NUCLEO32_L011K4/board.mk
-#include $(CHIBIOS)/os/hal/osal/os-less/ARMCMx/osal.mk
-#include $(CHIBIOS)/os/hal/osal/rt-nil/osal.mk
-# RTOS files (optional).
-#include $(CHIBIOS)/os/nil/nil.mk
-#include $(CHIBIOS)/os/common/ports/ARMCMx/compilers/GCC/mk/port_v6m.mk
 # Auto-build files in ./source recursively.
-#include $(CHIBIOS)/tools/mk/autobuild.mk
-# Other files (optional).
-#include $(CHIBIOS)/test/lib/test.mk
-#include $(CHIBIOS)/test/nil/nil_test.mk
-#include $(CHIBIOS)/test/oslib/oslib_test.mk
+include $(CHIBIOS)/tools/mk/autobuild.mk
 
 # Define linker script file here
-#LDSCRIPT= $(STARTUPLD)/STM32L011x4.ld
 LDSCRIPT= ./STM32L011x4.ld
 
 # C sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.
 CSRC = $(ALLCSRC) \
        $(TESTSRC) \
-	   $(CHIBIOS)/os/hal/osal/lib/osal_vt.c \
-	   2048.c \
-	   buttons.c \
-	   dogs.c \
-	   flapbird.c \
-       main.c \
-	   osal.c
+       $(CHIBIOS)/os/hal/osal/lib/osal_vt.c
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.
