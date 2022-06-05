@@ -9,6 +9,7 @@
  * See the GNU General Public License for more details.
  */
 
+#include "bit-font2.h"
 //#include "ch.h"
 #include "dogs.h"
 #include "hal.h"
@@ -215,142 +216,83 @@ void draw_rect(int x, int y, int w, int h)
     }
 }
 
-void draw_bitmap(int x, int y, const unsigned char *buffer)
+void draw_bitmap_wh(int x, int y, int w, int h, const unsigned char *data)
 {
-    // Prepare source information
-    const unsigned char *src = buffer;
-    const int width = *src++;
-    const int height = *src++;
     int sbit = 0;
 
-    for (int j = 0; j < height; j++) {
-        for (int i = 0; i < width; i++) {
-            draw_pixel(x + i, y + j, *src & (1 << sbit));
+    for (int j = 0; j < h; j++) {
+        for (int i = 0; i < w; i++) {
+            draw_pixel(x + i, y + j, *data & (1 << sbit));
             if (++sbit == 8) {
                 sbit = 0;
-                ++src;
+                ++data;
             }
         }
     }
 }
 
-static const unsigned char draw_number_bitmaps[10][10] = {
-    { 8, 8, // '0'
-        0b00011000,
-        0b00100100,
-        0b01000010,
-        0b01000010,
-        0b01000010,
-        0b01000010,
-        0b00100100,
-        0b00011000,
-    },
-    { 8, 8, // '1'
-        0b01111100,
-        0b00010000,
-        0b00010000,
-        0b00010000,
-        0b00010000,
-        0b00010000,
-        0b00010100,
-        0b00011000,
-    },
-    { 8, 8, // '2'
-        0b01111110,
-        0b00001000,
-        0b00010000,
-        0b00100000,
-        0b01000000,
-        0b01000010,
-        0b00100100,
-        0b00011000,
-    },
-    { 8, 8, // '3'
-        0b00011100,
-        0b00100010,
-        0b01000000,
-        0b00100000,
-        0b00111100,
-        0b01000000,
-        0b00100010,
-        0b00011100,
-    },
-    { 8, 8, // '4'
-        0b00100000,
-        0b00100000,
-        0b00100000,
-        0b00111110,
-        0b00100100,
-        0b00101000,
-        0b00110000,
-        0b00100000,
-    },
-    { 8, 8, // '5'
-        0b00011100,
-        0b00100010,
-        0b01000000,
-        0b01000000,
-        0b00100000,
-        0b00011110,
-        0b00000010,
-        0b01111110,
-    },
-    { 8, 8, // '6'
-        0b00011000,
-        0b00100100,
-        0b01000010,
-        0b01000110,
-        0b00111010,
-        0b00000010,
-        0b00000100,
-        0b00111000,
-    },
-    { 8, 8, // '7'
-        0b00001000,
-        0b00001000,
-        0b00001000,
-        0b00001000,
-        0b00010000,
-        0b00100000,
-        0b01000000,
-        0b01111110,
-    },
-    { 8, 8, // '8'
-        0b00011000,
-        0b00100100,
-        0b01000010,
-        0b00100100,
-        0b00111100,
-        0b01000010,
-        0b00100100,
-        0b00011000,
-    },
-    { 8, 8, // '9'
-        0b00011100,
-        0b00100010,
-        0b01000000,
-        0b01111000,
-        0b01000100,
-        0b01000010,
-        0b00100100,
-        0b00011000,
-    },
-};
+void draw_bitmap(int x, int y, const unsigned char *buffer)
+{
+    draw_bitmap_wh(x, y, buffer[0], buffer[1], buffer + 2);
+}
+
+void draw_glyph(int ix, int iy, unsigned int glyph)
+{
+    const unsigned char *ptr;
+    int x, y, sbit, tbits;
+
+    x = ix + 5;
+    y = iy;
+    ptr = bitfontGetBitmapLo(glyph);
+    sbit = 0;
+    tbits = 18;
+
+draw_glyph_loop:
+    for (int i = 0; i < tbits; ++i) {
+        draw_pixel(x, y, *ptr & (1 << sbit));
+
+        if (x == ix) {
+            x += 5;
+            ++y;
+        } else {
+            --x;
+        }
+
+        if (sbit == 7) {
+            sbit = 0;
+            ++ptr;
+        } else {
+            ++sbit;
+        }
+    }
+
+    if (tbits == 18) {
+        ptr = bitfontGetBitmapHi(glyph);
+        sbit = 0;
+        tbits = 24;
+        goto draw_glyph_loop;
+    }
+}
 
 void draw_number(int x, int y, int number)
 {
+    // TODO Handle negatives better?
     if (number < 0)
         number = -number;
+
+    // Count digits
     int tmp = number;
     int count;
     for (count = 0; tmp; count++)
         tmp /= 10;
     if (count == 0)
         count = 1;
-    x += count * 8;
+
+    // Draw digits
+    x += count * 7;
     do {
-        x -= 8;
-        draw_bitmap(x, y, draw_number_bitmaps[number % 10]);
+        x -= 7;
+        draw_glyph(x, y, bitfontGetGlyph('0' + (number % 10)));
     } while (number /= 10);
 }
 
