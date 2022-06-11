@@ -67,6 +67,9 @@ static void alarm_callback(RTCDriver *rtcp, rtcevent_t event)
 int main(void)
 {
     halInit();
+
+    RCC->CR &= ~(RCC_CR_PLLON); // Ensure that the PLL is off (unused).
+
     //chSysInit();
     buttons_init();
 

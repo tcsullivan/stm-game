@@ -39,7 +39,7 @@
  * HAL driver system settings.
  */
 #define STM32_NO_INIT                       FALSE
-#define STM32_VOS                           STM32_VOS_1P2
+#define STM32_VOS                           STM32_VOS_1P5
 #define STM32_PVD_ENABLE                    TRUE
 #define STM32_PLS                           STM32_PLS_LEV4
 #define STM32_HSI16_ENABLED                 TRUE
@@ -50,9 +50,9 @@
 #define STM32_ADC_CLOCK_ENABLED             TRUE
 #define STM32_MSIRANGE                      STM32_MSIRANGE_4M
 #define STM32_SW                            STM32_SW_MSI
-#define STM32_PLLSRC                        STM32_PLLSRC_NONE
-#define STM32_PLLMUL_VALUE                  1
-#define STM32_PLLDIV_VALUE                  8
+#define STM32_PLLSRC                        STM32_PLLSRC_HSI16
+#define STM32_PLLMUL_VALUE                  3
+#define STM32_PLLDIV_VALUE                  3
 #define STM32_HPRE                          STM32_HPRE_DIV1
 #define STM32_PPRE1                         STM32_PPRE1_DIV1
 #define STM32_PPRE2                         STM32_PPRE2_DIV1
